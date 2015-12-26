@@ -150,6 +150,16 @@ allow $1 $3:unix_stream_socket connectto;
 define(`set_prop', `
 __unix_socket_connect__($1, property, init)
 allow $1 $2:property_service set;
+get_prop($1, $2)
+')
+
+#####################################
+# get_prop(sourcedomain, targetproperty)
+# Allows source domain to read the
+# targetproperty.
+#
+define(`get_prop', `
+allow $1 $2:file r_file_perms;
 ')
 
 #####################################

@@ -41,7 +41,7 @@ type urandom_device, dev_type, mlstrustedobject;
 type video_device, dev_type;
 type vcs_device, dev_type;
 type zero_device, dev_type, mlstrustedobject;
-type fuse_device, dev_type;
+type fuse_device, dev_type, mlstrustedobject;
 type iio_device, dev_type;
 type ion_device, dev_type, mlstrustedobject;
 type gps_device, dev_type;
@@ -54,6 +54,7 @@ type usbaccessory_device, dev_type, mlstrustedobject;
 type usb_device, dev_type, mlstrustedobject;
 type klog_device, dev_type;
 type properties_device, dev_type;
+type properties_serial, dev_type;
 type i2c_device, dev_type;
 
 # All devices have a uart for the hci
@@ -97,3 +98,6 @@ type metadata_block_device, dev_type;
 
 # The 'misc' partition used by recovery and A/B.
 type misc_block_device, dev_type;
+
+# Bootctrl block device used by A/B update (update_engine, update_verifier).
+type bootctrl_block_device, dev_type;

@@ -3,14 +3,6 @@
 # Allow reaping by init.
 allow domain init:process sigchld;
 
-# Read access to properties mapping.
-allow domain kernel:fd use;
-allow domain tmpfs:file { read getattr };
-allow domain tmpfs:lnk_file { read getattr };
-
-# Search /storage/emulated tmpfs mount.
-allow domain tmpfs:dir r_dir_perms;
-
 # Intra-domain accesses.
 allow domain self:process {
     fork
@@ -30,6 +22,7 @@ allow domain self:process {
     setrlimit
 };
 allow domain self:fd use;
+allow domain proc:dir search;
 allow domain self:dir r_dir_perms;
 allow domain self:lnk_file r_file_perms;
 allow domain self:{ fifo_file file } rw_file_perms;
@@ -38,13 +31,6 @@ allow domain self:unix_stream_socket { create_stream_socket_perms connectto };
 
 # Inherit or receive open files from others.
 allow domain init:fd use;
-allow domain system_server:fd use;
-
-# Connect to adbd and use a socket transferred from it.
-# This is used for e.g. adb backup/restore.
-allow domain adbd:unix_stream_socket connectto;
-allow domain adbd:fd use;
-allow domain adbd:unix_stream_socket { getattr getopt ioctl read write shutdown };
 
 userdebug_or_eng(`
   # Same as adbd rules above, except allow su to do the same thing
@@ -73,15 +59,13 @@ allow domain debuggerd:process sigchld;
 allow domain debuggerd:unix_stream_socket connectto;
 
 # Root fs.
-allow domain rootfs:dir r_dir_perms;
-allow domain rootfs:file r_file_perms;
-allow domain rootfs:lnk_file r_file_perms;
+allow domain rootfs:dir search;
+allow domain rootfs:lnk_file read;
 
 # Device accesses.
 allow domain device:dir search;
 allow domain dev_type:lnk_file r_file_perms;
 allow domain devpts:dir search;
-allow domain device:file read;
 allow domain socket_device:dir r_dir_perms;
 allow domain owntty_device:chr_file rw_file_perms;
 allow domain null_device:chr_file rw_file_perms;
@@ -92,77 +76,53 @@ allow domain ptmx_device:chr_file rw_file_perms;
 allow domain alarm_device:chr_file r_file_perms;
 allow domain urandom_device:chr_file rw_file_perms;
 allow domain random_device:chr_file rw_file_perms;
-allow domain properties_device:file r_file_perms;
+allow domain properties_device:dir r_dir_perms;
+allow domain properties_serial:file r_file_perms;
+
+# For now, everyone can access core property files
+# Device specific properties are not granted by default
+get_prop(domain, core_property_type)
+dontaudit domain property_type:file audit_access;
+allow domain property_contexts:file r_file_perms;
+
 allow domain init:key search;
 allow domain vold:key search;
 
 # logd access
 write_logd(domain)
 
-# Filesystem accesses.
-allow domain fs_type:filesystem getattr;
-allow domain fs_type:dir getattr;
-
 # System file accesses.
-allow domain system_file:dir r_dir_perms;
-allow domain system_file:file r_file_perms;
-allow domain system_file:file execute;
-allow domain system_file:lnk_file r_file_perms;
+allow domain system_file:dir { search getattr };
+allow domain system_file:file { execute read open getattr };
+allow domain system_file:lnk_file read;
 
-# Read files already opened under /data.
-allow domain system_data_file:dir { search getattr };
-allow domain system_data_file:file { getattr read };
-allow domain system_data_file:lnk_file r_file_perms;
-
-# Read apk files under /data/app.
-allow domain apk_data_file:dir { getattr search };
-allow domain apk_data_file:file r_file_perms;
-allow domain apk_data_file:lnk_file r_file_perms;
-
-# Read /data/dalvik-cache.
-allow domain dalvikcache_data_file:dir { search getattr };
-allow domain dalvikcache_data_file:file r_file_perms;
-
-# Read already opened /cache files.
-allow domain cache_file:dir r_dir_perms;
-allow domain cache_file:file { getattr read };
-allow domain cache_file:lnk_file r_file_perms;
-
-# Read timezone related information
+# libc references /data/misc/zoneinfo for timezone related information
 r_dir_file(domain, zoneinfo_data_file)
 
-# For /acct/uid/*/tasks.
-allow domain cgroup:dir { search write };
-allow domain cgroup:file w_file_perms;
-
-#Allow access to ion memory allocation device
-allow domain ion_device:chr_file rw_file_perms;
-
-# Read access to pseudo filesystems.
-r_dir_file(domain, proc)
-r_dir_file(domain, sysfs)
+# Lots of processes access current CPU information
 r_dir_file(domain, sysfs_devices_system_cpu)
-r_dir_file(domain, inotify)
-r_dir_file(domain, cgroup)
-r_dir_file(domain, proc_net)
+
+# files under /data.
+allow domain system_data_file:dir { search getattr };
+allow domain system_data_file:lnk_file read;
+
+# required by the dynamic linker
+allow domain proc:lnk_file read;
+
+# /proc/cpuinfo
 allow domain proc_cpuinfo:file r_file_perms;
 
-# debugfs access
-allow domain debugfs:dir r_dir_perms;
-allow domain debugfs:file w_file_perms;
+# toybox loads libselinux which stats /sys/fs/selinux/
+allow domain selinuxfs:file getattr;
+allow domain sysfs:dir search;
+allow domain selinuxfs:filesystem getattr;
 
-# Get SELinux enforcing status.
-allow domain selinuxfs:dir r_dir_perms;
-allow domain selinuxfs:file r_file_perms;
-
-# /data/security files
-allow domain security_file:dir { search getattr };
-allow domain security_file:file getattr;
-allow domain security_file:lnk_file r_file_perms;
-
-# World readable asec image contents
-allow domain asec_public_file:file r_file_perms;
-allow domain { asec_public_file asec_apk_file }:dir r_dir_perms;
+# Almost all processes log tracing information to
+# /sys/kernel/debug/tracing/trace_marker
+# The reason behind this is documented in b/6513400
+allow domain debugfs:dir search;
+allow domain debugfs_tracing:dir search;
+allow domain debugfs_trace_marker:file w_file_perms;
 
 ###
 ### neverallow rules
@@ -364,7 +324,6 @@ neverallow { domain -install_recovery -recovery } recovery_block_device:blk_file
 neverallow { domain -servicemanager } *:binder set_context_mgr;
 
 # Only authorized processes should be writing to files in /data/dalvik-cache
-# (excluding /data/dalvik-cache/profiles, which is labeled differently)
 neverallow {
   domain
   -init # TODO: limit init to relabelfrom for files
@@ -552,3 +511,28 @@ neverallow domain ~property_type:property_service set;
 # $ grep mydaemon file_contexts
 # /system/bin/mydaemon -- u:object_r:mydaemon_exec:s0
 neverallow domain domain:file { execute execute_no_trans entrypoint };
+
+# Do not allow access to the generic debugfs label. This is too broad.
+# Instead, if access to part of debugfs is desired, it should have a
+# more specific label.
+# TODO: fix system_server and dumpstate
+neverallow { domain -init -system_server -dumpstate } debugfs:file no_rw_file_perms;
+
+neverallow {
+  domain
+  -init
+  -recovery
+  -sdcardd
+  -vold
+} fuse_device:chr_file open;
+neverallow {
+  domain
+  -dumpstate
+  -init
+  -priv_app
+  -recovery
+  -sdcardd
+  -system_server
+  -ueventd
+  -vold
+} fuse_device:chr_file *;

@@ -39,7 +39,9 @@ type fuse, sdcard_type, fs_type, mlstrustedobject;
 type vfat, sdcard_type, fs_type, mlstrustedobject;
 typealias fuse alias sdcard_internal;
 typealias vfat alias sdcard_external;
-type debugfs, fs_type, mlstrustedobject;
+type debugfs, fs_type;
+type debugfs_trace_marker, fs_type, debugfs_type, mlstrustedobject;
+type debugfs_tracing, fs_type, debugfs_type;
 type pstorefs, fs_type;
 type functionfs, fs_type;
 type oemfs, fs_type, contextmount_type;
@@ -77,8 +79,6 @@ type apk_private_data_file, file_type, data_file_type;
 type apk_private_tmp_file, file_type, data_file_type, mlstrustedobject;
 # /data/dalvik-cache
 type dalvikcache_data_file, file_type, data_file_type;
-# /data/dalvik-cache/profiles
-type dalvikcache_profiles_data_file, file_type, data_file_type, mlstrustedobject;
 # /data/resource-cache
 type resourcecache_data_file, file_type, data_file_type;
 # /data/local - writable by shell
@@ -126,6 +126,8 @@ type wifi_data_file, file_type, data_file_type;
 type zoneinfo_data_file, file_type, data_file_type;
 type vold_data_file, file_type, data_file_type;
 type perfprofd_data_file, file_type, data_file_type, mlstrustedobject;
+# /data/misc/trace for method traces on userdebug / eng builds
+type method_trace_data_file, file_type, data_file_type, mlstrustedobject;
 
 # Compatibility with type names used in vanilla Android 4.3 and 4.4.
 typealias audio_data_file alias audio_firmware_file;
@@ -192,9 +194,13 @@ type sap_uim_socket, file_type;
 # UART (for GPS) control proc file
 type gps_control, file_type;
 
+# property_contexts file
+type property_contexts, file_type;
+
 # Allow files to be created in their appropriate filesystems.
 allow fs_type self:filesystem associate;
 allow sysfs_type sysfs:filesystem associate;
+allow debugfs_type debugfs:filesystem associate;
 allow file_type labeledfs:filesystem associate;
 allow file_type tmpfs:filesystem associate;
 allow file_type rootfs:filesystem associate;

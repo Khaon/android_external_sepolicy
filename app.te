@@ -25,9 +25,27 @@ allow appdomain zygote_tmpfs:file read;
 # Notify zygote of death;
 allow appdomain zygote:process sigchld;
 
-# Notify zygote of the wrapped process PID when using --invoke-with.
+# Place process into foreground / background
+allow appdomain cgroup:dir { search write };
+allow appdomain cgroup:file w_file_perms;
+
+# Read /data/dalvik-cache.
+allow appdomain dalvikcache_data_file:dir { search getattr };
+allow appdomain dalvikcache_data_file:file r_file_perms;
+
+# Read the /sdcard symlink
+allow appdomain rootfs:lnk_file r_file_perms;
+
+# Search /storage/emulated tmpfs mount.
+allow appdomain tmpfs:dir r_dir_perms;
+
 userdebug_or_eng(`
+  # Notify zygote of the wrapped process PID when using --invoke-with.
   allow appdomain zygote:fifo_file write;
+
+  # Allow apps to create and write method traces in /data/misc/trace.
+  allow appdomain method_trace_data_file:dir w_dir_perms;
+  allow appdomain method_trace_data_file:file { create w_file_perms };
 ')
 
 # Notify shell and adbd of death when spawned via runas for ndk-gdb.
@@ -162,10 +180,6 @@ allow appdomain usbaccessory_device:chr_file { read write getattr };
 # For art.
 allow appdomain dalvikcache_data_file:file execute;
 allow appdomain dalvikcache_data_file:lnk_file r_file_perms;
-
-# /data/dalvik-cache/profiles
-allow appdomain dalvikcache_profiles_data_file:dir { search getattr };
-allow appdomain dalvikcache_profiles_data_file:file rw_file_perms;
 
 # Allow any app to read shared RELRO files.
 allow appdomain shared_relro_file:dir search;
@@ -382,3 +396,6 @@ neverallow appdomain {
   security_file
   tmpfs
 }:lnk_file no_w_file_perms;
+
+# Do not allow Apps to directly open tun_device
+neverallow appdomain tun_device:chr_file open;

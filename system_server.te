@@ -65,6 +65,10 @@ allow system_server self:netlink_kobject_uevent_socket create_socket_perms;
 # Use generic netlink sockets.
 allow system_server self:netlink_socket create_socket_perms;
 
+# Use generic "sockets" where the address family is not known
+# to the kernel.
+allow system_server self:socket create_socket_perms;
+
 # Set and get routes directly via netlink.
 allow system_server self:netlink_route_socket nlmsg_write;
 
@@ -208,10 +212,6 @@ allow system_server anr_data_file:file create_file_perms;
 allow system_server backup_data_file:dir create_dir_perms;
 allow system_server backup_data_file:file create_file_perms;
 
-# Read from /data/dalvik-cache/profiles
-allow system_server dalvikcache_profiles_data_file:dir rw_dir_perms;
-allow system_server dalvikcache_profiles_data_file:file create_file_perms;
-
 # Write to /data/system/heapdump
 allow system_server heapdump_data_file:dir rw_dir_perms;
 allow system_server heapdump_data_file:file create_file_perms;
@@ -277,10 +277,8 @@ allow system_server system_data_file:file relabelfrom;
 allow system_server wallpaper_file:file relabelto;
 allow system_server wallpaper_file:file { rw_file_perms unlink };
 
-# This was originally required for relabeling /data/anr,
-# but should not be used anymore. TODO: remove it.
+# FingerprintService.java does a restorecon of the directory /data/system/users/[0-9]+/fpdata(/.*)?
 allow system_server system_data_file:dir relabelfrom;
-auditallow system_server system_data_file:dir relabelfrom;
 
 # Property Service write
 set_prop(system_server, system_prop)
@@ -316,10 +314,6 @@ allow system_server cache_file:fifo_file create_file_perms;
 
 # Run system programs, e.g. dexopt.
 allow system_server system_file:file x_file_perms;
-
-# XXX Run toolbox.  Might not be needed.
-allow system_server toolbox_exec:file rx_file_perms;
-auditallow system_server toolbox_exec:file rx_file_perms;
 
 # LocationManager(e.g, GPS) needs to read and write
 # to uart driver and ctrl proc entry
@@ -430,7 +424,19 @@ allow system_server sdcard_type:dir { getattr search };
 allow system_server mnt_expand_file:dir r_dir_perms;
 
 # Allow system process to relabel the fingerprint directory after mkdir
-allow system_server fingerprintd_data_file:dir {r_dir_perms relabelto};
+# and delete the directory and files when no longer needed
+allow system_server fingerprintd_data_file:dir { r_dir_perms remove_name rmdir relabelto write };
+allow system_server fingerprintd_data_file:file { getattr unlink };
+
+userdebug_or_eng(`
+  # Allow system server to create and write method traces in /data/misc/trace.
+  allow system_server method_trace_data_file:dir w_dir_perms;
+  allow system_server method_trace_data_file:file { create w_file_perms };
+')
+
+# For AppFuse.
+allow system_server vold:fd use;
+allow system_server fuse_device:chr_file { read write ioctl };
 
 ###
 ### Neverallow rules

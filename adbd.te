@@ -1,6 +1,6 @@
 # adbd seclabel is specified in init.rc since
 # it lives in the rootfs and has no unique file type.
-type adbd, domain, domain_deprecated, mlstrustedsubject;
+type adbd, domain, mlstrustedsubject;
 
 userdebug_or_eng(`
   allow adbd self:process setcurrent;
@@ -35,6 +35,8 @@ allow adbd shell_data_file:dir create_dir_perms;
 allow adbd shell_data_file:file create_file_perms;
 
 # adb push/pull sdcard.
+allow adbd tmpfs:dir search;
+allow adbd rootfs:lnk_file r_file_perms;
 allow adbd sdcard_type:dir create_dir_perms;
 allow adbd sdcard_type:file create_file_perms;
 
@@ -60,6 +62,8 @@ binder_use(adbd)
 binder_call(adbd, surfaceflinger)
 # b/13188914
 allow adbd gpu_device:chr_file rw_file_perms;
+allow adbd ion_device:chr_file rw_file_perms;
+r_dir_file(adbd, system_file)
 
 # Read /data/misc/adb/adb_keys.
 allow adbd adb_keys_file:dir search;

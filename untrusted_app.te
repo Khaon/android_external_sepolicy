@@ -78,6 +78,7 @@ allow untrusted_app mnt_media_rw_file:dir search;
 allow untrusted_app servicemanager:service_manager list;
 
 allow untrusted_app drmserver_service:service_manager find;
+allow untrusted_app healthd_service:service_manager find;
 allow untrusted_app mediaserver_service:service_manager find;
 allow untrusted_app nfc_service:service_manager find;
 allow untrusted_app radio_service:service_manager find;
@@ -111,7 +112,7 @@ neverallow untrusted_app domain:netlink_socket *;
 
 # Too much leaky information in debugfs. It's a security
 # best practice to ensure these files aren't readable.
-neverallow untrusted_app debugfs:file read;
+neverallow untrusted_app debugfs_type:file read;
 
 # Do not allow untrusted apps to register services.
 # Only trusted components of Android should be registering
@@ -144,9 +145,6 @@ neverallow untrusted_app file_type:file link;
 
 # Do not allow untrusted_app to access network MAC address file
 neverallow untrusted_app sysfs_mac_address:file no_rw_file_perms;
-
-# Do not allow untrusted app to directly open tun_device
-neverallow untrusted_app tun_device:chr_file open;
 
 # Do not allow untrusted_app access to /cache
 neverallow untrusted_app cache_file:dir ~{ r_dir_perms };
