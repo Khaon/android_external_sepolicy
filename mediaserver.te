@@ -108,6 +108,9 @@ allow mediaserver drmserver:drmservice {
     pread
 };
 
+# V4A
+allow mediaserver mediaserver_tmpfs:file execute;
+
 ###
 ### neverallow rules
 ###
