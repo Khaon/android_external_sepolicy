@@ -59,13 +59,6 @@ allow untrusted_app system_app_data_file:file { read write getattr };
 # This includes what used to be media_app, shared_app, and release_app.
 #
 
-# Access /dev/mtp_usb.
-# TODO android.process.media moved to priv_app domain. Does
-# untrusted_app still require these permissions? Can "open"
-# be removed?
-allow untrusted_app mtp_device:chr_file rw_file_perms;
-auditallow untrusted_app mtp_device:chr_file rw_file_perms;
-
 # Access to /data/media.
 allow untrusted_app media_rw_data_file:dir create_dir_perms;
 allow untrusted_app media_rw_data_file:file create_file_perms;
@@ -147,5 +140,5 @@ neverallow untrusted_app file_type:file link;
 neverallow untrusted_app sysfs_mac_address:file no_rw_file_perms;
 
 # Do not allow untrusted_app access to /cache
-neverallow untrusted_app cache_file:dir ~{ r_dir_perms };
-neverallow untrusted_app cache_file:file ~{ read getattr };
+neverallow untrusted_app { cache_file cache_recovery_file }:dir ~{ r_dir_perms };
+neverallow untrusted_app { cache_file cache_recovery_file }:file ~{ read getattr };

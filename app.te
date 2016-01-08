@@ -123,8 +123,7 @@ allow appdomain qtaguid_device:chr_file r_file_perms;
 
 # Grant GPU access to all processes started by Zygote.
 # They need that to render the standard UI.
-allow { appdomain -isolated_app } gpu_device:chr_file { rw_file_perms execute };
-auditallow { appdomain -isolated_app } gpu_device:chr_file execute;
+allow { appdomain -isolated_app } gpu_device:chr_file rw_file_perms;
 
 # Use the Binder.
 binder_use(appdomain)
@@ -218,6 +217,10 @@ allow appdomain runas_exec:file getattr;
 # Check SELinux policy and contexts.
 selinux_check_access(appdomain)
 selinux_check_context(appdomain)
+
+# appdomain should not be accessing information on /sys
+auditallow { appdomain userdebug_or_eng(`-su') } sysfs:dir { open getattr read ioctl };
+auditallow { appdomain userdebug_or_eng(`-su') } sysfs:file r_file_perms;
 
 ###
 ### Neverallow rules
@@ -390,6 +393,7 @@ neverallow { appdomain -system_app -radio -shell -bluetooth -nfc }
 neverallow appdomain {
   apk_data_file
   cache_file
+  cache_recovery_file
   dev_type
   rootfs
   system_file
