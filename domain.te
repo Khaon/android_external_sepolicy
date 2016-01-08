@@ -266,11 +266,13 @@ neverallow domain { cache_file cache_backup_file cache_recovery_file }:file exec
 # Protect most domains from executing arbitrary content from /data.
 neverallow {
   domain
+  -system_server
   -untrusted_app
   -priv_app
   -shell
 } {
   data_file_type
+  -gps_data_file
   -dalvikcache_data_file
   -system_data_file # shared libs in apks
   -apk_data_file
