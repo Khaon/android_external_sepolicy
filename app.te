@@ -222,6 +222,10 @@ selinux_check_context(appdomain)
 auditallow { appdomain userdebug_or_eng(`-su') } sysfs:dir { open getattr read ioctl };
 auditallow { appdomain userdebug_or_eng(`-su') } sysfs:file r_file_perms;
 
+# Apps receive an open tun fd from the framework for
+# device traffic. Do not allow untrusted app to directly open tun_device
+allow { appdomain -isolated_app } tun_device:chr_file { read write getattr ioctl append };
+
 ###
 ### Neverallow rules
 ###
@@ -239,7 +243,7 @@ neverallow appdomain dev_type:blk_file { read write };
 # Access to any of the following character devices.
 neverallow appdomain {
     audio_device
-    camera_device
+    video_device
     dm_device
     radio_device
     gps_device
@@ -278,8 +282,6 @@ neverallow appdomain socket_device:sock_file write;
 # Unix domain sockets.
 neverallow appdomain adbd_socket:sock_file write;
 neverallow appdomain installd_socket:sock_file write;
-neverallow { appdomain -bluetooth -radio -shell -system_app -nfc }
-    property_socket:sock_file write;
 neverallow { appdomain -radio } rild_socket:sock_file write;
 neverallow appdomain vold_socket:sock_file write;
 neverallow appdomain zygote_socket:sock_file write;
@@ -384,10 +386,6 @@ neverallow { appdomain -system_app -shell }
 # Ability to perform any filesystem operation other than statfs(2).
 # i.e. no mount(2), unmount(2), etc.
 neverallow appdomain fs_type:filesystem ~getattr;
-
-# Ability to set system properties.
-neverallow { appdomain -system_app -radio -shell -bluetooth -nfc }
-    property_type:property_service set;
 
 # prevent creation/manipulation of globally readable symlinks
 neverallow appdomain {
