@@ -92,6 +92,9 @@ allow appdomain shell_exec:file rx_file_perms;
 allow appdomain system_file:file rx_file_perms;
 allow appdomain toolbox_exec:file rx_file_perms;
 
+# Renderscript needs the ability to read directories on /system
+r_dir_file(appdomain, system_file)
+
 # Execute dex2oat when apps call dexclassloader
 allow appdomain dex2oat_exec:file rx_file_perms;
 
@@ -204,6 +207,8 @@ use_keystore({ appdomain -isolated_app })
 
 allow appdomain console_device:chr_file { read write };
 
+allow { appdomain -isolated_app } ion_device:chr_file rw_file_perms;
+
 ###
 ### CTS-specific rules
 ###
@@ -225,6 +230,12 @@ auditallow { appdomain userdebug_or_eng(`-su') } sysfs:file r_file_perms;
 # Apps receive an open tun fd from the framework for
 # device traffic. Do not allow untrusted app to directly open tun_device
 allow { appdomain -isolated_app } tun_device:chr_file { read write getattr ioctl append };
+
+# Connect to adbd and use a socket transferred from it.
+# This is used for e.g. adb backup/restore.
+allow appdomain adbd:unix_stream_socket connectto;
+allow appdomain adbd:fd use;
+allow appdomain adbd:unix_stream_socket { getattr getopt ioctl read write shutdown };
 
 ###
 ### Neverallow rules
@@ -321,9 +332,7 @@ neverallow appdomain exec_type:file
 # This is the default type for anything under /data not otherwise
 # specified in file_contexts.  Define a different type for portions
 # that should be writable by apps.
-# Exception for system_app for Settings.
-neverallow { appdomain -system_app }
-    system_data_file:dir_file_class_set
+neverallow appdomain system_data_file:dir_file_class_set
     { create write setattr relabelfrom relabelto append unlink link rename };
 
 # Write to various other parts of /data.

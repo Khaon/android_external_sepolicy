@@ -20,7 +20,7 @@
 ### additional following rules:
 ###
 
-type untrusted_app, domain, domain_deprecated;
+type untrusted_app, domain;
 app_domain(untrusted_app)
 net_domain(untrusted_app)
 bluetooth_domain(untrusted_app)
@@ -88,6 +88,10 @@ allow untrusted_app self:process ptrace;
 # Programs routinely attempt to scan through /system, looking
 # for files. Suppress the denials when they occur.
 dontaudit untrusted_app exec_type:file getattr;
+
+# TODO: access of /proc/meminfo, give specific label or switch to
+# using meminfo service
+allow untrusted_app proc:file r_file_perms;
 
 ###
 ### neverallow rules
