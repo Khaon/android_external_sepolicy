@@ -14,6 +14,7 @@ type qtaguid_proc, fs_type, mlstrustedobject;
 type proc_bluetooth_writable, fs_type;
 type proc_cpuinfo, fs_type;
 type proc_iomem, fs_type;
+type proc_meminfo, fs_type;
 type proc_net, fs_type;
 type proc_sysrq, fs_type;
 type proc_uid_cputime_showstat, fs_type;
@@ -50,6 +51,7 @@ type functionfs, fs_type;
 type oemfs, fs_type, contextmount_type;
 type usbfs, fs_type;
 type binfmt_miscfs, fs_type;
+type app_fusefs, fs_type, contextmount_type;
 
 # File types
 type unlabeled, file_type;
@@ -106,6 +108,11 @@ type storage_file, file_type;
 # Label for storage dirs which are just mount stubs
 type mnt_media_rw_stub_file, file_type;
 type storage_stub_file, file_type;
+
+# /postinstall: Mount point used by update_engine to run postinstall.
+type postinstall_mnt_dir, file_type;
+# Files inside the /postinstall mountpoint are all labeled as postinstall_file.
+type postinstall_file, file_type, exec_type;
 
 # /data/misc subdirectories
 type adb_keys_file, file_type, data_file_type;
@@ -169,6 +176,8 @@ type security_file, file_type;
 type bluetooth_efs_file, file_type;
 # Type for fingerprint template file.
 type fingerprintd_data_file, file_type, data_file_type;
+# Type for appfuse file.
+type app_fuse_file, file_type, data_file_type;
 
 # Socket types
 type adbd_socket, file_type;
@@ -211,6 +220,8 @@ allow file_type labeledfs:filesystem associate;
 allow file_type tmpfs:filesystem associate;
 allow file_type rootfs:filesystem associate;
 allow dev_type tmpfs:filesystem associate;
+allow app_fuse_file app_fusefs:filesystem associate;
+allow postinstall_file self:filesystem associate;
 
 # It's a bug to assign the file_type attribute and fs_type attribute
 # to any type. Do not allow it.
