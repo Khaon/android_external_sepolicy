@@ -67,7 +67,6 @@ allow untrusted_app mnt_media_rw_file:dir search;
 allow untrusted_app servicemanager:service_manager list;
 
 allow untrusted_app drmserver_service:service_manager find;
-allow untrusted_app healthd_service:service_manager find;
 allow untrusted_app mediaserver_service:service_manager find;
 allow untrusted_app nfc_service:service_manager find;
 allow untrusted_app radio_service:service_manager find;
@@ -94,6 +93,10 @@ allow untrusted_app proc_meminfo:file r_file_perms;
 
 # access /proc/net/xt_qtguid/stats
 r_dir_file(untrusted_app, proc_net)
+
+# Cts: HwRngTest
+allow untrusted_app sysfs_hwrandom:dir search;
+allow untrusted_app sysfs_hwrandom:file r_file_perms;
 
 ###
 ### neverallow rules
